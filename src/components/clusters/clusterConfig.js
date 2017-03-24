@@ -637,6 +637,9 @@ var daemonSet = {
             }
           }
         ],
+        "nodeSelector": {
+          "snap": "ok"
+        },
         "restartPolicy": "Always",
         "hostNetwork": true,
         "hostPID": true

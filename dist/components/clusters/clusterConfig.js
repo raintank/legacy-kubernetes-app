@@ -655,6 +655,9 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
                   "privileged": true
                 }
               }],
+              "nodeSelector": {
+                "snap": "ok"
+              },
               "restartPolicy": "Always",
               "hostNetwork": true,
               "hostPID": true
