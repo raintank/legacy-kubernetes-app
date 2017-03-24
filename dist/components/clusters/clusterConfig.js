@@ -465,16 +465,6 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
         "workflow": {
           "collect": {
             "metrics": {
-              "/intel/docker/*/*/*/stats/cgroups/cpu_stats/cpu_usage/total_usage": {},
-              "/intel/docker/*/*/*/stats/cgroups/memory_stats/usage/usage": {},
-              "/intel/docker/*/*/*/stats/connection/tcp/*": {},
-              "/intel/docker/*/*/*/stats/filesystem/*/available": {},
-              "/intel/docker/*/*/*/stats/filesystem/*/capacity": {},
-              "/intel/docker/*/*/*/stats/filesystem/*/reads_completed": {},
-              "/intel/docker/*/*/*/stats/filesystem/*/usage": {},
-              "/intel/docker/*/*/*/stats/filesystem/*/writes_completed": {},
-              "/intel/docker/*/*/*/stats/network/*/rx_bytes": {},
-              "/intel/docker/*/*/*/stats/network/*/tx_bytes": {},
               "/intel/procfs/cpu/all/*": {},
               "/intel/procfs/meminfo/mem_available": {},
               "/intel/procfs/meminfo/mem_available_perc": {},
