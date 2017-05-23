@@ -175,13 +175,53 @@ export class ClusterConfigCtrl {
   }
 
   generateKubestateConfigMap() {
-    var task = _.cloneDeep(kubestateSnapTask);
-    task.workflow.collect.publish[0].config.prefix = "snap."+slugify(this.cluster.name);
-    task.workflow.collect.publish[0].config.port = this.cluster.jsonData.port;
-    task.workflow.collect.publish[0].config.server = this.cluster.jsonData.server;
-    var cm = _.cloneDeep(kubestateConfigMap);
-    cm.data["core.json"] = JSON.stringify(task);
+    const kubestateTasks = ['container', 'pod', 'node', 'deployment'];
+    const cm = _.cloneDeep(kubestateConfigMap);
+
+    _.each(kubestateTasks, kt => {
+      var task = _.cloneDeep(this.createKubestateSnapTask('/grafanalabs/kubestate/' + kt + '/*'));
+      task.workflow.collect.publish[0].config.prefix = "snap."+slugify(this.cluster.name);
+      task.workflow.collect.publish[0].config.port = this.cluster.jsonData.port;
+      task.workflow.collect.publish[0].config.server = this.cluster.jsonData.server;
+
+      cm.data[kt + '.json'] = JSON.stringify(task);
+    });
+
     return cm;
+  }
+
+  createKubestateSnapTask(metric) {
+    var kubestateSnapTask = {
+      "version": 1,
+      "start": true,
+      "schedule": {
+        "type": "simple",
+        "interval": "10s"
+      },
+      "max-failures": 10,
+      "workflow": {
+        "collect": {
+          "metrics": {
+          },
+          "process": null,
+          "publish": [
+            {
+              "plugin_name": "graphite",
+              "config": {
+                "prefix_tags": "",
+                "prefix": "",
+                "server": "",
+                "port": 2003
+              }
+            }
+          ]
+        }
+      }
+    };
+
+    kubestateSnapTask.workflow.collect.metrics[metric] = {};
+
+    return kubestateSnapTask;
   }
 
   deploySnap() {
@@ -370,7 +410,7 @@ export class ClusterConfigCtrl {
 
 ClusterConfigCtrl.templateUrl = 'components/clusters/partials/cluster_config.html';
 
-const raintankSnapImage = 'raintank/snap_k8s:v21';
+const raintankSnapImage = 'danielraintank/snap_k8s:v27';
 
 var configMap = {
   "kind": "ConfigMap",
@@ -392,7 +432,6 @@ var kubestateConfigMap = {
     "namespace": "kube-system"
   },
   "data": {
-    "core.json": ""
   }
 };
 
@@ -433,35 +472,6 @@ var snapTask = {
         "/intel/procfs": {
           "proc_path": "/proc_host"
         }
-      },
-      "process": null,
-      "publish": [
-        {
-          "plugin_name": "graphite",
-          "config": {
-            "prefix_tags": "",
-            "prefix": "",
-            "server": "",
-            "port": 2003
-          }
-        }
-      ]
-    }
-  }
-};
-
-var kubestateSnapTask = {
-  "version": 1,
-  "start": true,
-  "schedule": {
-    "type": "simple",
-    "interval": "10s"
-  },
-  "max-failures": 10,
-  "workflow": {
-    "collect": {
-      "metrics": {
-        "/grafanalabs/kubestate/*":{}
       },
       "process": null,
       "publish": [

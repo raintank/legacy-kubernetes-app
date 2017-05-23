@@ -3,7 +3,7 @@
 System.register(['lodash', 'app/core/app_events', 'angular'], function (_export, _context) {
   "use strict";
 
-  var _, appEvents, angular, _createClass, ClusterConfigCtrl, raintankSnapImage, configMap, kubestateConfigMap, snapTask, kubestateSnapTask, daemonSet, kubestate;
+  var _, appEvents, angular, _createClass, ClusterConfigCtrl, raintankSnapImage, configMap, kubestateConfigMap, snapTask, daemonSet, kubestate;
 
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
@@ -228,18 +228,58 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
         }, {
           key: 'generateKubestateConfigMap',
           value: function generateKubestateConfigMap() {
-            var task = _.cloneDeep(kubestateSnapTask);
-            task.workflow.collect.publish[0].config.prefix = "snap." + slugify(this.cluster.name);
-            task.workflow.collect.publish[0].config.port = this.cluster.jsonData.port;
-            task.workflow.collect.publish[0].config.server = this.cluster.jsonData.server;
+            var _this5 = this;
+
+            var kubestateTasks = ['container', 'pod', 'node', 'deployment'];
             var cm = _.cloneDeep(kubestateConfigMap);
-            cm.data["core.json"] = JSON.stringify(task);
+
+            _.each(kubestateTasks, function (kt) {
+              var task = _.cloneDeep(_this5.createKubestateSnapTask('/grafanalabs/kubestate/' + kt + '/*'));
+              task.workflow.collect.publish[0].config.prefix = "snap." + slugify(_this5.cluster.name);
+              task.workflow.collect.publish[0].config.port = _this5.cluster.jsonData.port;
+              task.workflow.collect.publish[0].config.server = _this5.cluster.jsonData.server;
+
+              cm.data[kt + '.json'] = JSON.stringify(task);
+            });
+
             return cm;
+          }
+        }, {
+          key: 'createKubestateSnapTask',
+          value: function createKubestateSnapTask(metric) {
+            var kubestateSnapTask = {
+              "version": 1,
+              "start": true,
+              "schedule": {
+                "type": "simple",
+                "interval": "10s"
+              },
+              "max-failures": 10,
+              "workflow": {
+                "collect": {
+                  "metrics": {},
+                  "process": null,
+                  "publish": [{
+                    "plugin_name": "graphite",
+                    "config": {
+                      "prefix_tags": "",
+                      "prefix": "",
+                      "server": "",
+                      "port": 2003
+                    }
+                  }]
+                }
+              }
+            };
+
+            kubestateSnapTask.workflow.collect.metrics[metric] = {};
+
+            return kubestateSnapTask;
           }
         }, {
           key: 'deploySnap',
           value: function deploySnap() {
-            var _this5 = this;
+            var _this6 = this;
 
             if (!this.cluster || !this.cluster.id) {
               this.alertSrv.set("Error", "Could not connect to cluster.", 'error');
@@ -252,18 +292,18 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
 
             if (!this.snapDeployed) {
               return this.checkApiVersion(self.cluster.id).then(function () {
-                return _this5.createConfigMap(self.cluster.id, cm);
+                return _this6.createConfigMap(self.cluster.id, cm);
               }).then(function () {
-                return _this5.createConfigMap(self.cluster.id, kubestateCm);
+                return _this6.createConfigMap(self.cluster.id, kubestateCm);
               }).then(function () {
-                return _this5.createDaemonSet(self.cluster.id, daemonSet);
+                return _this6.createDaemonSet(self.cluster.id, daemonSet);
               }).then(function () {
-                return _this5.createDeployment(self.cluster.id, kubestate);
+                return _this6.createDeployment(self.cluster.id, kubestate);
               }).catch(function (err) {
-                _this5.alertSrv.set("Error", err, 'error');
+                _this6.alertSrv.set("Error", err, 'error');
               }).then(function () {
-                _this5.snapDeployed = true;
-                _this5.alertSrv.set("Deployed", "Snap DaemonSet for Kubernetes metrics deployed to " + self.cluster.name, 'success', 5000);
+                _this6.snapDeployed = true;
+                _this6.alertSrv.set("Deployed", "Snap DaemonSet for Kubernetes metrics deployed to " + self.cluster.name, 'success', 5000);
               });
             } else {
               return self.updateSnapSettings(cm, kubestateCm);
@@ -272,28 +312,28 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
         }, {
           key: 'undeploySnap',
           value: function undeploySnap() {
-            var _this6 = this;
+            var _this7 = this;
 
             var self = this;
             return this.deleteConfigMap(self.cluster.id, 'snap-tasks').then(function () {
-              return _this6.deleteConfigMap(self.cluster.id, 'snap-tasks-kubestate');
+              return _this7.deleteConfigMap(self.cluster.id, 'snap-tasks-kubestate');
             }).catch(function (err) {
-              _this6.alertSrv.set("Error", err, 'error');
+              _this7.alertSrv.set("Error", err, 'error');
             }).then(function () {
-              return _this6.deleteDaemonSet(self.cluster.id);
+              return _this7.deleteDaemonSet(self.cluster.id);
             }).catch(function (err) {
-              _this6.alertSrv.set("Error", err, 'error');
+              _this7.alertSrv.set("Error", err, 'error');
             }).then(function () {
-              return _this6.deleteDeployment(self.cluster.id, 'snap-kubestate-deployment');
+              return _this7.deleteDeployment(self.cluster.id, 'snap-kubestate-deployment');
             }).catch(function (err) {
-              _this6.alertSrv.set("Error", err, 'error');
+              _this7.alertSrv.set("Error", err, 'error');
             }).then(function () {
-              return _this6.deletePods();
+              return _this7.deletePods();
             }).catch(function (err) {
-              _this6.alertSrv.set("Error", err, 'error');
+              _this7.alertSrv.set("Error", err, 'error');
             }).then(function () {
-              _this6.snapDeployed = false;
-              _this6.alertSrv.set("Daemonset removed", "Snap DaemonSet for Kubernetes metrics removed from " + self.cluster.name, 'success', 5000);
+              _this7.snapDeployed = false;
+              _this7.alertSrv.set("Daemonset removed", "Snap DaemonSet for Kubernetes metrics removed from " + self.cluster.name, 'success', 5000);
             });
           }
         }, {
@@ -350,13 +390,13 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
         }, {
           key: 'deleteDeployment',
           value: function deleteDeployment(clusterId, deploymentName) {
-            var _this7 = this;
+            var _this8 = this;
 
             return this.backendSrv.request({
               url: 'api/datasources/proxy/' + clusterId + '/apis/extensions/v1beta1/namespaces/kube-system/deployments/' + deploymentName,
               method: 'DELETE'
             }).then(function () {
-              return _this7.backendSrv.request({
+              return _this8.backendSrv.request({
                 url: 'api/datasources/proxy/' + clusterId + '/apis/extensions/v1beta1/namespaces/kube-system/replicasets?labelSelector=app%3Dsnap-collector',
                 method: 'DELETE'
               });
@@ -373,7 +413,7 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
         }, {
           key: 'deletePods',
           value: function deletePods() {
-            var _this8 = this;
+            var _this9 = this;
 
             var self = this;
             return this.backendSrv.request({
@@ -388,33 +428,33 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
               var promises = [];
 
               _.forEach(pods.items, function (pod) {
-                promises.push(_this8.backendSrv.request({
+                promises.push(_this9.backendSrv.request({
                   url: 'api/datasources/proxy/' + self.cluster.id + '/api/v1/namespaces/kube-system/pods/' + pod.metadata.name,
                   method: 'DELETE'
                 }));
               });
 
-              return _this8.$q.all(promises);
+              return _this9.$q.all(promises);
             });
           }
         }, {
           key: 'updateSnapSettings',
           value: function updateSnapSettings(cm, kubestateCm) {
-            var _this9 = this;
+            var _this10 = this;
 
             var self = this;
             return this.deleteConfigMap(self.cluster.id, 'snap-tasks').then(function () {
-              return _this9.createConfigMap(self.cluster.id, cm);
+              return _this10.createConfigMap(self.cluster.id, cm);
             }).then(function () {
-              return _this9.deleteConfigMap(self.cluster.id, 'snap-tasks-kubestate');
+              return _this10.deleteConfigMap(self.cluster.id, 'snap-tasks-kubestate');
             }).then(function () {
-              return _this9.createConfigMap(self.cluster.id, kubestateCm);
+              return _this10.createConfigMap(self.cluster.id, kubestateCm);
             }).then(function () {
-              return _this9.deletePods();
+              return _this10.deletePods();
             }).catch(function (err) {
-              _this9.alertSrv.set("Error", err, 'error');
+              _this10.alertSrv.set("Error", err, 'error');
             }).then(function () {
-              _this9.alertSrv.set("Updated", "Graphite Settings in Config Map on " + self.cluster.name + " updated successfully", 'success', 3000);
+              _this10.alertSrv.set("Updated", "Graphite Settings in Config Map on " + self.cluster.name + " updated successfully", 'success', 3000);
             });
           }
         }, {
@@ -431,7 +471,7 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
 
       ClusterConfigCtrl.templateUrl = 'components/clusters/partials/cluster_config.html';
 
-      raintankSnapImage = 'raintank/snap_k8s:v21';
+      raintankSnapImage = 'danielraintank/snap_k8s:v27';
       configMap = {
         "kind": "ConfigMap",
         "apiVersion": "v1",
@@ -450,9 +490,7 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
           "name": "snap-tasks-kubestate",
           "namespace": "kube-system"
         },
-        "data": {
-          "core.json": ""
-        }
+        "data": {}
       };
       snapTask = {
         "version": 1,
@@ -491,32 +529,6 @@ System.register(['lodash', 'app/core/app_events', 'angular'], function (_export,
               "/intel/procfs": {
                 "proc_path": "/proc_host"
               }
-            },
-            "process": null,
-            "publish": [{
-              "plugin_name": "graphite",
-              "config": {
-                "prefix_tags": "",
-                "prefix": "",
-                "server": "",
-                "port": 2003
-              }
-            }]
-          }
-        }
-      };
-      kubestateSnapTask = {
-        "version": 1,
-        "start": true,
-        "schedule": {
-          "type": "simple",
-          "interval": "10s"
-        },
-        "max-failures": 10,
-        "workflow": {
-          "collect": {
-            "metrics": {
-              "/grafanalabs/kubestate/*": {}
             },
             "process": null,
             "publish": [{

@@ -1,0 +1,75 @@
+{
+  "kind": "Deployment",
+  "apiVersion": "extensions/v1beta1",
+  "metadata": {
+    "name": "snap-kubestate-deployment",
+    "namespace": "kube-system"
+  },
+  "spec": {
+    "replicas": 1,
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "snap-collector"
+        }
+      },
+      "spec": {
+        "volumes": [
+          {
+            "name": "snap-tasks",
+            "configMap": {
+              "name": "snap-tasks-kubestate"
+            }
+          }
+        ],
+        "containers": [
+          {
+            "name": "snap",
+            "image": "danielraintank/snap_k8s:v26",
+            "ports": [
+              {
+                "name": "snap-api",
+                "hostPort": 8383,
+                "containerPort": 8383,
+                "protocol": "TCP"
+              }
+            ],
+            "livenessProbe": {
+              "exec": {
+                "command": [
+                  "/bin/bash",
+                  "-c",
+                  "/opt/snap/bin/snaptel task list |grep Disabled | awk 'BEGIN {err = 0} length($1) > 0 { err = 1} END {exit err}'"
+                ]
+              },
+              "initialDelaySeconds": 60
+            },
+            "env": [
+              {
+                "name": "SNAP_PORT",
+                "value": "8383"
+              },
+              {
+                "name": "SNAP_URL",
+                "value": "http://localhost:8383"
+              },
+              {
+                "name": "SNAP_LOG_LEVEL",
+                "value": "3"
+              }
+            ],
+            "resources": {},
+            "volumeMounts": [
+              {
+                "name": "snap-tasks",
+                "mountPath": "/opt/snap/tasks"
+              }
+            ],
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "restartPolicy": "Always"
+      }
+    }
+  }
+}
