@@ -113,7 +113,8 @@ Metrics are collected by the [Intel Snap](http://snap-telemetry.io/) collector u
 The following Snap plugins are used to collect metrics:
 
 - [CPU Collector](https://github.com/intelsdi-x/snap-plugin-collector-cpu/blob/master/METRICS.md)
-- [Docker Collector](https://github.com/intelsdi-x/snap-plugin-collector-docker/blob/master/METRICS.md)
+- [CAdvisor Collector](https://github.com/grafana/snap-plugin-collector-cadvisor/blob/master/METRICS.md)
+- [df Collector](https://github.com/intelsdi-x/snap-plugin-collector-df/blob/master/METRICS.md)
 - [Network Interface Collector](https://github.com/intelsdi-x/snap-plugin-collector-interface/blob/master/METRICS.md)
 - [IOStat Collector](https://github.com/intelsdi-x/snap-plugin-collector-iostat)
 - [Load Collector](https://github.com/intelsdi-x/snap-plugin-collector-load#collected-metrics)
