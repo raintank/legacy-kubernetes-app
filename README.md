@@ -12,7 +12,7 @@ The Grafana Kubernetes App allows you to monitor your Kubernetes cluster's perfo
 
 ### Requirements
 
-1. Currently only has support for **Graphite**.
+1. Currently only has support for **Graphite**. You have to deploy a Graphite server which is accessible from your Kubernetes cluster.
 2. For automatic deployment of the collectors, then Kubernetes 1.4 or higher is required.
 3. Grafana 4 is required if using TLS Client Auth (rather than Basic Auth).
 
@@ -105,6 +105,38 @@ kubectl delete configmaps -n kube-system snap-tasks
 
 kubectl delete configmaps -n kube-system snap-tasks-kubestate
 ```
+
+#### Deploying on Google Cloud Contaner (GKE)
+
+For those who have your Kubernetes cluster deploy automatically on Google Cloud platform via Kubernetes Engine, here is the simple step you can follow to deploy to your cluster, this is for those who wants to deploy everything on a single Kubernetes cluster. For those who want to do otherwise, this basic steps might be helpful.
+
+**NOTE**: Some container matrics like CPU and Memory will not be available for the official version `0.0.7` of kubernetes-app on GKE. For those who want to use that metric you need to deploy Grafana with kubernetes-app plugin version `0.0.8`.
+
+1. Deploy Graphite, make sure you make Carbon port 2003 accessible throughout the cluster with `clusterIP` since the `snap-collector` will not work on Kubernetes DNS, copy the Graphite Carbon service ip address.
+2. Deploy Grafana 4 and include kubernets-app plugin. For `0.0.8` version installation, try [here](http://docs.grafana.org/plugins/installation/) with mounted volume, or consult issue [here](https://github.com/grafana/kubernetes-app/issues/29)
+3. Add Graphite as datasource in Grafana
+4. Enable Kubernetes-app plugin
+5. Now you are ready to [Connecting your Cluster](#connecting-to-your-cluster).
+6. Obtain your admin http credential by running this command on your local machine that has access to your Kubernetes cluster,
+
+    ```
+    gcloud container clusters describe {{Cluster name}} --zone {{Your zone}} --project {{Your project}}
+    ```
+    
+    this command will return yaml with `masterAuth` key which contain username and password to Kubernetes API Server
+    
+7. In Grafana, add a new cluster using data from step 1 and 4. In `HTTP Setting`, for those who wish to deploy Grafana on the same Kubernetes cluster, you can use `https://kubernetes.default` which is the internal URL to Kubernetes API Server, 
+
+    note the `https`, that is only way to connect to the Kubernetes API Server. 
+    
+    For those who deploy elsewhere, the Kubernetes API Servier IP Address is included from the return data of step 4. Check on `Basic Auth` and input your credential obtain from step 4. Also check on `Skip TLS Verification (Insecure)` if you do not have any TLS set up for your cluster.
+8. On Grafana Write, add the _IP Address_ of your Carbon Host if it's deployed in the same Kubernetes Container. This is the IP you set up on Step 1. The kubernetes DNS Will not work on Snap container so it's better to use IP Address.
+9. Deploy and save your setting. to check if this works see if you found `snap` container appear while running
+
+    `kubectl get pods -n kube-system`
+    
+10. Check if data is feeded to Graphite and Carbon, If there appear to be some data thne your set up must be good to go!
+
 
 #### Technical Details
 
