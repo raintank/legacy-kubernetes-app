@@ -2100,7 +2100,7 @@
           "tableColumn": "",
           "targets": [{
             "refId": "A",
-            "target": "snap.minikube.grafanalabs.kubestate.job.$namespace.*.status.succeeded"
+            "target": "snap.$cluster.grafanalabs.kubestate.job.$namespace.*.status.succeeded"
           }],
           "thresholds": "",
           "title": "Jobs Succeeded",
@@ -2166,7 +2166,7 @@
           "tableColumn": "",
           "targets": [{
             "refId": "A",
-            "target": "snap.minikube.grafanalabs.kubestate.job.$namespace.*.status.failed"
+            "target": "snap.$cluster.grafanalabs.kubestate.job.$namespace.*.status.failed"
           }],
           "thresholds": "",
           "title": "Jobs Active",
@@ -2232,7 +2232,7 @@
           "tableColumn": "",
           "targets": [{
             "refId": "A",
-            "target": "snap.minikube.grafanalabs.kubestate.job.$namespace.*.status.failed"
+            "target": "snap.$cluster.grafanalabs.kubestate.job.$namespace.*.status.failed"
           }],
           "thresholds": "",
           "title": "Jobs Failed",
