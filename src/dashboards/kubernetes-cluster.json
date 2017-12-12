@@ -2045,7 +2045,7 @@
       "isNew": false
     },
     {
-      "collapse": true,
+      "collapse": false,
       "height": 250,
       "panels": [{
           "cacheTimeout": null,
