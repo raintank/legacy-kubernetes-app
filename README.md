@@ -1,3 +1,5 @@
+# WARNING: This project is no longer maintained. Please consider using the Prometheus compatible kubernetes application: https://github.com/grafana/kubernetes-app
+
 # Grafana App for Kubernetes
 
 [Kubernetes](http://kubernetes.io/) is an open-source system for automating deployment, scaling, and management of containerized applications.
